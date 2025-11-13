@@ -1,11 +1,17 @@
 import random
 import pygame
+from zmq import Enum
 
-DIRECTIONS = ["UP", "RIGHT", "LEFT", "DOWN"]
 REWARDS = {"GREEN": 10,
           "RED": -10,
           "DEATH": -20,
           "EMPTY": -0.5}
+
+class Direction(Enum):
+    UP = 0
+    RIGHT = 1
+    DOWN = 2
+    LEFT = 3
 
 class Visualizer:
     def __init__(self, w=760, h=520, block_size=20):
@@ -17,36 +23,11 @@ class Visualizer:
         self.screen = pygame.display.set_mode((self.w, self.h))
         pygame.display.set_caption("Learn2Slither")
         self.clock = pygame.time.Clock()
-
         self.reset()
 
-        self.running = True
-
-        while self.running:
-            # poll for events
-            # pygame.QUIT event means the user clicked X to close your window
-            for event in pygame.event.get():
-                if event.type == pygame.QUIT:
-                    self.running = False
-
-            # fill the screen with a color to wipe away anything from last frame
-            self.screen.fill("grey")
-
-            pygame.draw.rect(self.screen, "blue", pygame.Rect(self.snake[0][0], self.snake[0][1], self.block_size, self.block_size))
-            pygame.draw.rect(self.screen, "blue", pygame.Rect(self.snake[1][0], self.snake[1][1], self.block_size, self.block_size))
-            pygame.draw.rect(self.screen, "blue", pygame.Rect(self.snake[2][0], self.snake[2][1], self.block_size, self.block_size))
-            for apple in self.green_apples:
-                pygame.draw.circle(self.screen, "green", (apple[0] + self.block_size // 2, apple[1] + self.block_size // 2), self.block_size // 2)
-            if self.red_apple:
-                pygame.draw.circle(self.screen, "red", (self.red_apple[0] + self.block_size // 2, self.red_apple[1] + self.block_size // 2), self.block_size // 2)
-
-            # flip() the display to put your work on screen
-            pygame.display.flip()
-
-        pygame.quit()
     
     def reset(self):
-        self.direction = random.choice(DIRECTIONS)
+        self.direction = random.choice(list(Direction))
         self.head = (random.randint(0, (self.w // self.block_size - 1) * self.block_size), random.randint(0, (self.h // self.block_size - 1) * self.block_size))
         # Initialize the snake body with the head position and 2 more values
         self.snake = [self.head, (self.head[0] - self.block_size, self.head[1]), (self.head[0] - 2 * self.block_size, self.head[1])]
@@ -54,6 +35,21 @@ class Visualizer:
         self.green_apples = []
         self.red_apple = None
         self.place_food()
+
+
+    def update(self):
+        self.screen.fill("grey")
+
+        for body in self.snake:
+            pygame.draw.rect(self.screen, "blue", pygame.Rect(body[0], body[1], self.block_size, self.block_size))
+        
+        for apple in self.green_apples:
+            pygame.draw.circle(self.screen, "green", (apple[0] + self.block_size // 2, apple[1] + self.block_size // 2), self.block_size // 2)
+        
+        if self.red_apple:
+            pygame.draw.circle(self.screen, "red", (self.red_apple[0] + self.block_size // 2, self.red_apple[1] + self.block_size // 2), self.block_size // 2)
+
+        pygame.display.flip()
 
 
     def play_step(self, action):
@@ -67,7 +63,7 @@ class Visualizer:
 
         reward = 0
         game_over = False
-        if self.is_collision(self.head):
+        if self.is_collision(self.head) or len(self.snake) <= 0:
             game_over = True
             reward = REWARDS["DEATH"]
             return reward, game_over, self.score
@@ -84,7 +80,7 @@ class Visualizer:
         else:
             self.snake.pop()
 
-        #update ui??
+        self.update()
         self.clock.tick(60)  # limits FPS to 60
 
         return reward, game_over, self.score
@@ -118,12 +114,12 @@ class Visualizer:
     def move(self, direction):
         x = self.head[0]
         y = self.head[1]
-        if direction == "UP":
+        if direction == Direction.UP:
             y -= self.block_size
-        elif direction == "DOWN":
+        elif direction == Direction.DOWN:
             y += self.block_size
-        elif direction == "LEFT":
+        elif direction == Direction.LEFT:
             x -= self.block_size
-        elif direction == "RIGHT":
+        elif direction == Direction.RIGHT:
             x += self.block_size
         self.head = (x, y)
