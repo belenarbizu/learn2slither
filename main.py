@@ -3,7 +3,7 @@ from state import State
 from game import Game
 
 def main():
-    agent = Agent()
+    agent = Agent(batch_size=100)
     state = State()
     game = Game()
 
