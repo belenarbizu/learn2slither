@@ -13,8 +13,8 @@ class Direction(Enum):
     DOWN = 2
     LEFT = 3
 
-class Visualizer:
-    def __init__(self, w=760, h=520, block_size=20):
+class Game:
+    def __init__(self, w=760, h=520, block_size=40):
         self.w = w
         self.h = h
         self.block_size = block_size
@@ -123,3 +123,11 @@ class Visualizer:
         elif direction == Direction.RIGHT:
             x += self.block_size
         self.head = (x, y)
+    
+
+    def get_state(self):
+        head = self.head
+        left = (head[0] - self.block_size, head[1])
+        right = (head[0] + self.block_size, head[1])
+        up = (head[0], head[1] - self.block_size)
+        down = (head[0], head[1] + self.block_size)
