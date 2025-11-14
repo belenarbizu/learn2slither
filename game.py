@@ -126,8 +126,39 @@ class Game:
     
 
     def get_state(self):
-        head = self.head
-        left = (head[0] - self.block_size, head[1])
-        right = (head[0] + self.block_size, head[1])
-        up = (head[0], head[1] - self.block_size)
-        down = (head[0], head[1] + self.block_size)
+        left = (self.head[0] - self.block_size, self.head[1])
+        right = (self.head[0] + self.block_size, self.head[1])
+        up = (self.head[0], self.head[1] - self.block_size)
+        down = (self.head[0], self.head[1] + self.block_size)
+
+        danger_left = self.is_collision(left)
+        danger_right = self.is_collision(right)
+        danger_up = self.is_collision(up)
+        danger_down = self.is_collision(down)
+
+        red_apple_left = 1 if (self.red_apple[0] < self.head[0] and self.red_apple[1] == self.head[1]) else 0
+        red_apple_right = 1 if (self.red_apple[0] > self.head[0] and self.red_apple[1] == self.head[1]) else 0
+        red_apple_up = 1 if (self.red_apple[1] < self.head[1] and self.red_apple[0] == self.head[0]) else 0
+        red_apple_down = 1 if (self.red_apple[1] > self.head[1] and self.red_apple[0] == self.head[0]) else 0
+
+        green_apple_left = 1 if (self.green_apples[n][0] < self.head[0] and self.green_apples[n][1] == self.head[1] for n in range(len(self.green_apples))) else 0
+        green_apple_right = 1 if (self.green_apples[n][0] > self.head[0] and self.green_apples[n][1] == self.head[1] for n in range(len(self.green_apples))) else 0
+        green_apple_up = 1 if (self.green_apples[n][1] < self.head[1] and self.green_apples[n][0] == self.head[0] for n in range(len(self.green_apples))) else 0
+        green_apple_down = 1 if (self.green_apples[n][1] > self.head[1] and self.green_apples[n][0] == self.head[0] for n in range(len(self.green_apples))) else 0
+
+        state = [
+            danger_left,
+            danger_right,
+            danger_up,
+            danger_down,
+            red_apple_left,
+            red_apple_right,
+            red_apple_up,
+            red_apple_down,
+            green_apple_left,
+            green_apple_right,
+            green_apple_up,
+            green_apple_down
+        ]
+
+        return state
