@@ -9,6 +9,7 @@ class Agent:
         self.gamma = 0  # discount rate
         self.memory = deque(maxlen=100_000)
         self.batch_size = batch_size
+        self.model = None  # neural network model
     
 
     def remember(self, state, action, reward, next_state, done):
@@ -30,7 +31,19 @@ class Agent:
 
     
     def get_action(self, state):
-        pass
+        action = [0, 0, 0] #no down
+
+        if random.randint(0, 200) < self.epsilon:
+            move = random.randint(0, 2)
+            action[move] = 1
+        else:
+            # convert state list to state tensor so PyTorch model can process it
+            state_tensor = torch.tensor(state, dtype=torch.float)
+            prediction = self.model(state_tensor)
+            move = torch.argmax(prediction).item()
+            action[move] = 1
+
+        return action
 
 
     def train_step(self, state, action, reward, next_state, done):
