@@ -2,14 +2,19 @@ import torch
 import random
 import numpy as np
 from collections import deque #for memory
+from model import Model
+import torch.optim as optim
+import torch.nn as nn
 
 class Agent:
-    def __init__(self, batch_size):
+    def __init__(self, batch_size, lr):
         self.epsilon = 0  # randomness
-        self.gamma = 0  # discount rate
+        self.gamma = 0.9  # discount rate
         self.memory = deque(maxlen=100_000)
         self.batch_size = batch_size
-        self.model = None  # neural network model
+        self.model = Model(13, 3)  # neural network model
+        self.optimizer = optim.Adam(self.model.parameters(), lr=lr)
+        self.criterion = nn.MSELoss()
     
 
     def remember(self, state, action, reward, next_state, done):
@@ -47,4 +52,20 @@ class Agent:
 
 
     def train_step(self, state, action, reward, next_state, done):
-        pass
+        state = torch.tensor(state, dtype=torch.float)
+        next_state = torch.tensor(next_state, dtype=torch.float)
+        action = torch.tensor(action, dtype=torch.long)
+        reward = torch.tensor(reward, dtype=torch.float)
+
+        state = torch.unsqueeze(state, 0)
+        next_state = torch.unsqueeze(next_state, 0)
+        action = torch.unsqueeze(action, 0)
+        reward = torch.unsqueeze(reward, 0)
+        done = (done, )
+
+        # use the model to predict the Q values for the current state
+        pred = self.model(state)
+
+        # clone the prediction to create the target tensor
+        target = pred.clone()
+        

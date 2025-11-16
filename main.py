@@ -4,7 +4,7 @@ from game import Game
 
 def main():
     agent = Agent(batch_size=100)
-    state = State()
+    model = Model()
     game = Game()
 
     while True:
