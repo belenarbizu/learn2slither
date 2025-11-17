@@ -13,10 +13,12 @@ class Direction(Enum):
     DOWN = 2
     LEFT = 3
 
+BOARD_SIZE = 10
+
 class Game:
-    def __init__(self, w=760, h=520, block_size=40):
-        self.w = w
-        self.h = h
+    def __init__(self, block_size=40):
+        self.w = BOARD_SIZE * block_size
+        self.h = BOARD_SIZE * block_size
         self.block_size = block_size
 
         pygame.init()
@@ -58,8 +60,9 @@ class Game:
                 pygame.quit()
                 quit()
         
+        #ACTION IS AN ARRAY OF 3 VALUES, MOVE HAVE TO RECEIVE THE VALUE == 1
         self.move(action)  # update the head
-        self.snake.insert(0, self.head)
+        self.snake.insert(0, self.head) # add new head to the snake body in position 0
 
         reward = 0
         game_over = False
@@ -78,7 +81,7 @@ class Game:
             reward = REWARDS["RED"]
             return reward, game_over, self.score
         else:
-            self.snake.pop()
+            self.snake.pop()  # remove tail (the last element of the list)
 
         self.update()
         self.clock.tick(60)  # limits FPS to 60
@@ -141,10 +144,10 @@ class Game:
         red_apple_up = 1 if (self.red_apple[1] < self.head[1] and self.red_apple[0] == self.head[0]) else 0
         red_apple_down = 1 if (self.red_apple[1] > self.head[1] and self.red_apple[0] == self.head[0]) else 0
 
-        green_apple_left = 1 if (self.green_apples[n][0] < self.head[0] and self.green_apples[n][1] == self.head[1] for n in range(len(self.green_apples))) else 0
-        green_apple_right = 1 if (self.green_apples[n][0] > self.head[0] and self.green_apples[n][1] == self.head[1] for n in range(len(self.green_apples))) else 0
-        green_apple_up = 1 if (self.green_apples[n][1] < self.head[1] and self.green_apples[n][0] == self.head[0] for n in range(len(self.green_apples))) else 0
-        green_apple_down = 1 if (self.green_apples[n][1] > self.head[1] and self.green_apples[n][0] == self.head[0] for n in range(len(self.green_apples))) else 0
+        green_apple_left = 1 if any(apple[0] < self.head[0] and apple[1] == self.head[1] for apple in self.green_apples) else 0
+        green_apple_right = 1 if any(apple[0] > self.head[0] and apple[1] == self.head[1] for apple in self.green_apples) else 0
+        green_apple_up = 1 if any(apple[1] < self.head[1] and apple[0] == self.head[0] for apple in self.green_apples) else 0
+        green_apple_down = 1 if any(apple[1] > self.head[1] and apple[0] == self.head[0] for apple in self.green_apples) else 0
 
         state = [
             danger_left,

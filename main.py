@@ -1,10 +1,8 @@
 from agent import Agent
-from model import Model
 from game import Game
 
 def main():
     agent = Agent(batch_size=100)
-    model = Model()
     game = Game()
 
     while True:
