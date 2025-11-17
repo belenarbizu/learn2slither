@@ -1,5 +1,5 @@
 from agent import Agent
-from state import State
+from model import Model
 from game import Game
 
 def main():
