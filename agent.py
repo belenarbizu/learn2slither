@@ -27,6 +27,8 @@ class Agent:
         else:
             mini_sample = self.memory
         
+        # states, actions, rewards, next_states, dones = zip(*mini_sample)
+        # self.train_step(states, actions, rewards, next_states, dones)
         for state, action, reward, next_state, done in mini_sample:
             self.train_step(state, action, reward, next_state, done)
     
@@ -57,6 +59,8 @@ class Agent:
         action = torch.tensor(action, dtype=torch.long)
         reward = torch.tensor(reward, dtype=torch.float)
 
+
+        # if len(state.shape) == 1:
         state = torch.unsqueeze(state, 0)
         next_state = torch.unsqueeze(next_state, 0)
         action = torch.unsqueeze(action, 0)
@@ -68,4 +72,16 @@ class Agent:
 
         # clone the prediction to create the target tensor
         target = pred.clone()
+
+        with torch.no_grad():
+            Q_new = reward
+            if not done[0]:
+                Q_new = reward + (self.gamma * torch.max(self.model(next_state)))
+            target[0][torch.argmax(action).item()] = Q_new
+        
+        self.optimizer.zero_grad()
+        loss = self.criterion(target, pred)
+        loss.backward()
+        self.optimizer.step()
+
         
