@@ -8,11 +8,11 @@ import torch.nn as nn
 
 class Agent:
     def __init__(self, batch_size, lr):
-        self.epsilon = 0  # randomness
+        self.epsilon = 80  # randomness
         self.gamma = 0.9  # discount rate
         self.memory = deque(maxlen=100_000)
         self.batch_size = batch_size
-        self.model = Model(13, 3)  # neural network model
+        self.model = Model(12, 3)  # neural network model, 12 are the states lines
         self.optimizer = optim.Adam(self.model.parameters(), lr=lr)
         self.criterion = nn.MSELoss()
     

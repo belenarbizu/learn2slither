@@ -1,8 +1,9 @@
 from agent import Agent
 from game import Game
+import pygame
 
 def main():
-    agent = Agent(batch_size=100)
+    agent = Agent(batch_size=100, lr=0.001)
     game = Game()
 
     while True:
@@ -24,6 +25,7 @@ def main():
             game.reset()
             # train long memory
             agent.train_long_memory()
+            agent.epsilon = max(0.01, agent.epsilon - 0.001)
 
 if __name__ == '__main__':
     main()

@@ -37,6 +37,7 @@ class Game:
         self.green_apples = []
         self.red_apple = None
         self.place_food()
+        self.update()
 
 
     def update(self):
@@ -59,9 +60,11 @@ class Game:
             if event.type == pygame.QUIT:
                 pygame.quit()
                 quit()
-        
-        #ACTION IS AN ARRAY OF 3 VALUES, MOVE HAVE TO RECEIVE THE VALUE == 1
-        self.move(action)  # update the head
+
+        for i in range(len(action)):
+            if action[i] == 1:
+                action_index = i
+        self.move(action_index)  # update the head
         self.snake.insert(0, self.head) # add new head to the snake body in position 0
 
         reward = 0
