@@ -5,7 +5,7 @@ from zmq import Enum
 REWARDS = {"GREEN": 10,
           "RED": -10,
           "DEATH": -20,
-          "EMPTY": -0.5}
+          "EMPTY": -0.1}
 
 class Direction(Enum):
     UP = 0

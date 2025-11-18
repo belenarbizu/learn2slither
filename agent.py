@@ -13,8 +13,12 @@ class Agent:
         self.memory = deque(maxlen=100_000)
         self.batch_size = batch_size
         self.model = Model(12, 3)  # neural network model, 12 are the states lines
+        self.target = Model(12, 3)
+        self.target.load_state_dict(self.model.state_dict())
+        self.target.eval()
         self.optimizer = optim.Adam(self.model.parameters(), lr=lr)
         self.criterion = nn.MSELoss()
+        self.update_count = 0
     
 
     def remember(self, state, action, reward, next_state, done):
@@ -73,15 +77,25 @@ class Agent:
         # clone the prediction to create the target tensor
         target = pred.clone()
 
+        # for i in range(len(done)):
+        #   with torch.no_grad():
+        #     Q_new = reward
+        #     if not done[i]:
+        #         Q_new = reward + (self.gamma * torch.max(self.model(next_state[i])))
+        #     target[i][torch.argmax(action[i]).item()] = Q_new
         with torch.no_grad():
             Q_new = reward
             if not done[0]:
-                Q_new = reward + (self.gamma * torch.max(self.model(next_state)))
+                Q_new = reward + (self.gamma * torch.max(self.target(next_state)))
             target[0][torch.argmax(action).item()] = Q_new
         
         self.optimizer.zero_grad()
         loss = self.criterion(target, pred)
         loss.backward()
         self.optimizer.step()
+
+        self.update_count += 1
+        if self.update_count % 1000 == 0:
+            self.target.load_state_dict(self.model.state_dict())
 
         

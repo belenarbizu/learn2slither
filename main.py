@@ -21,6 +21,10 @@ def main():
         # remember
         agent.remember(current_state, move, reward, new_state, done)
 
+        if score > 20:
+            agent.model.save('model.pth')
+            break
+
         if done:
             game.reset()
             # train long memory
