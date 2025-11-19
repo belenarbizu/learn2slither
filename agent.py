@@ -31,10 +31,8 @@ class Agent:
         else:
             mini_sample = self.memory
         
-        # states, actions, rewards, next_states, dones = zip(*mini_sample)
-        # self.train_step(states, actions, rewards, next_states, dones)
-        for state, action, reward, next_state, done in mini_sample:
-            self.train_step(state, action, reward, next_state, done)
+        states, actions, rewards, next_states, dones = zip(*mini_sample)
+        self.train_step(states, actions, rewards, next_states, dones)
     
 
     def train_short_memory(self, state, action, reward, next_state, done):
@@ -64,12 +62,12 @@ class Agent:
         reward = torch.tensor(reward, dtype=torch.float)
 
 
-        # if len(state.shape) == 1:
-        state = torch.unsqueeze(state, 0)
-        next_state = torch.unsqueeze(next_state, 0)
-        action = torch.unsqueeze(action, 0)
-        reward = torch.unsqueeze(reward, 0)
-        done = (done, )
+        if len(state.shape) == 1:
+            state = torch.unsqueeze(state, 0)
+            next_state = torch.unsqueeze(next_state, 0)
+            action = torch.unsqueeze(action, 0)
+            reward = torch.unsqueeze(reward, 0)
+            done = (done, )
 
         # use the model to predict the Q values for the current state
         pred = self.model(state)
@@ -77,20 +75,17 @@ class Agent:
         # clone the prediction to create the target tensor
         target = pred.clone()
 
-        # for i in range(len(done)):
-        #   with torch.no_grad():
-        #     Q_new = reward
-        #     if not done[i]:
-        #         Q_new = reward + (self.gamma * torch.max(self.model(next_state[i])))
-        #     target[i][torch.argmax(action[i]).item()] = Q_new
-        with torch.no_grad():
-            Q_new = reward
-            if not done[0]:
-                Q_new = reward + (self.gamma * torch.max(self.target(next_state)))
-            target[0][torch.argmax(action).item()] = Q_new
+        for i in range(len(done)):
+          with torch.no_grad():
+            Q_new = reward[i]
+            if not done[i]:
+                Q_new = reward[i] + (self.gamma * torch.max(self.model(next_state[i])))
+            target[i][torch.argmax(action[i]).item()] = Q_new
         
         self.optimizer.zero_grad()
+        # compute the loss between the target and predicted Q values
         loss = self.criterion(target, pred)
+        # backpropagate the loss and update the model parameters
         loss.backward()
         self.optimizer.step()
 
