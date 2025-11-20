@@ -164,12 +164,10 @@ class Game:
         red_apple_left = 1 if (self.red_apple[0] < self.head[0] and self.red_apple[1] == self.head[1]) else 0
         red_apple_right = 1 if (self.red_apple[0] > self.head[0] and self.red_apple[1] == self.head[1]) else 0
         red_apple_up = 1 if (self.red_apple[1] < self.head[1] and self.red_apple[0] == self.head[0]) else 0
-        red_apple_down = 1 if (self.red_apple[1] > self.head[1] and self.red_apple[0] == self.head[0]) else 0
 
         green_apple_left = 1 if any(apple[0] < self.head[0] and apple[1] == self.head[1] for apple in self.green_apples) else 0
         green_apple_right = 1 if any(apple[0] > self.head[0] and apple[1] == self.head[1] for apple in self.green_apples) else 0
         green_apple_up = 1 if any(apple[1] < self.head[1] and apple[0] == self.head[0] for apple in self.green_apples) else 0
-        green_apple_down = 1 if any(apple[1] > self.head[1] and apple[0] == self.head[0] for apple in self.green_apples) else 0
 
         state = [
             dir_left,
@@ -183,11 +181,9 @@ class Game:
             red_apple_left,
             red_apple_right,
             red_apple_up,
-            red_apple_down,
             green_apple_left,
             green_apple_right,
-            green_apple_up,
-            green_apple_down
+            green_apple_up
         ]
 
         return state

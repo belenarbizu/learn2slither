@@ -12,8 +12,8 @@ class Agent:
         self.gamma = 0.9  # discount rate
         self.memory = deque(maxlen=100_000)
         self.batch_size = batch_size
-        self.model = Model(16, 3)  # neural network model, 12 are the states lines
-        self.target = Model(16, 3)
+        self.model = Model(11, 3)  # neural network model, 12 are the states lines
+        self.target = Model(11, 3)
         self.target.load_state_dict(self.model.state_dict())
         self.target.eval()
         self.optimizer = optim.Adam(self.model.parameters(), lr=lr)
