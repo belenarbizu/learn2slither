@@ -29,7 +29,8 @@ def main():
             game.reset()
             # train long memory
             agent.train_long_memory()
-            agent.epsilon = max(0.01, agent.epsilon - 0.001)
+            agent.epsilon *= 0.995
+            agent.epsilon = max(0.01, agent.epsilon)
 
 if __name__ == '__main__':
     main()
