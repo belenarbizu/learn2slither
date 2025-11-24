@@ -4,7 +4,7 @@ from zmq import Enum
 
 REWARDS = {"GREEN": 10,
           "RED": -10,
-          "DEATH": -20,
+          "DEATH": -40,
           "EMPTY": -0.1}
 
 class Direction(Enum):
@@ -91,12 +91,13 @@ class Game:
             reward = REWARDS["RED"]
             self.red_apple = None
             self.snake.pop()
+            self.snake.pop()
             self.place_food()
         else:
             self.snake.pop()  # remove tail (the last element of the list)
 
         self.update()
-        self.clock.tick(8)  # limits FPS to 60
+        self.clock.tick(60)  # limits FPS to 60
 
         return reward, game_over, self.score
 
@@ -156,10 +157,10 @@ class Game:
         # next_dir = clock_wise[(idx + 1) % 4]
         # prev_dir = clock_wise[(idx - 1) % 4]
 
-        danger_left = self.is_collision(left)
-        danger_right = self.is_collision(right)
-        danger_up = self.is_collision(up)
-        danger_down = self.is_collision(down)
+        danger_left = dir_left and self.is_collision(left)
+        danger_right = dir_right and self.is_collision(right)
+        danger_up = dir_up and self.is_collision(up)
+        danger_down = dir_down and self.is_collision(down)
 
         red_apple_left = 1 if (self.red_apple[0] < self.head[0] and self.red_apple[1] == self.head[1]) else 0
         red_apple_right = 1 if (self.red_apple[0] > self.head[0] and self.red_apple[1] == self.head[1]) else 0

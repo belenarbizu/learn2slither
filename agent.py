@@ -8,17 +8,20 @@ import torch.nn as nn
 
 class Agent:
     def __init__(self, batch_size, lr):
-        self.epsilon = 80  # randomness
-        self.gamma = 0.9  # discount rate
+        self.epsilon = 1.0  # randomness
+        self.gamma = 0.95  # discount rate
         self.memory = deque(maxlen=100_000)
         self.batch_size = batch_size
-        self.model = Model(11, 3)  # neural network model, 12 are the states lines
-        self.target = Model(11, 3)
+        self.model = Model(14, 3)  # neural network model, 12 are the states lines
+
+        self.target = Model(14, 3)
         self.target.load_state_dict(self.model.state_dict())
         self.target.eval()
+
         self.optimizer = optim.Adam(self.model.parameters(), lr=lr)
         self.criterion = nn.MSELoss()
         self.update_count = 0
+        self.target_update = 100
     
 
     def remember(self, state, action, reward, next_state, done):
@@ -42,7 +45,7 @@ class Agent:
     def get_action(self, state):
         action = [0, 0, 0] #no down
 
-        if random.randint(0, 200) < self.epsilon:
+        if random.random() < self.epsilon:
             move = random.randint(0, 2)
             action[move] = 1
         else:
@@ -79,7 +82,7 @@ class Agent:
           with torch.no_grad():
             Q_new = reward[i]
             if not done[i]:
-                Q_new = reward[i] + (self.gamma * torch.max(self.model(next_state[i])))
+                Q_new = reward[i] + (self.gamma * torch.max(self.target(next_state[i])))
             target[i][torch.argmax(action[i]).item()] = Q_new
         
         self.optimizer.zero_grad()
@@ -90,7 +93,7 @@ class Agent:
         self.optimizer.step()
 
         self.update_count += 1
-        if self.update_count % 1000 == 0:
+        if self.update_count % self.target_update == 0:
             self.target.load_state_dict(self.model.state_dict())
 
         
