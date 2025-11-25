@@ -6,9 +6,9 @@ class Model(nn.Module):
 
     def __init__(self, n_observations, n_actions):
         super().__init__()
-        self.layer1 = nn.Linear(n_observations, 42, dtype=torch.float32)
-        self.layer2 = nn.Linear(42, 42, dtype=torch.float32)
-        self.layer3 = nn.Linear(42, n_actions, dtype=torch.float32)
+        self.layer1 = nn.Linear(n_observations, 256, dtype=torch.float32)
+        self.layer2 = nn.Linear(256, 256, dtype=torch.float32)
+        self.layer3 = nn.Linear(256, n_actions, dtype=torch.float32)
 
 
     def forward(self, x):
