@@ -1,11 +1,12 @@
 import random
 import pygame
 from zmq import Enum
+import numpy as np
 
-REWARDS = {"GREEN": 20,
-          "RED": -10,
-          "DEATH": -40,
-          "EMPTY": -0.1}
+REWARDS = {"GREEN": 25,
+          "RED": -25,
+          "DEATH": -100,
+          "EMPTY": -0.01}
 
 class Direction(Enum):
     UP = 0
@@ -29,13 +30,23 @@ class Game:
 
     
     def reset(self):
+        self.move_history = []
         self.direction = random.choice(list(Direction))
         self.head = (random.randint(0, (self.w // self.block_size - 1)) * self.block_size, random.randint(0, (self.h // self.block_size - 1)) * self.block_size)
+        
         # Initialize the snake body with the head position and 2 more values
-        self.snake = [self.head, (self.head[0] - self.block_size, self.head[1]), (self.head[0] - (2 * self.block_size), self.head[1])]
+        if self.direction == Direction.UP:
+            self.snake = [self.head, (self.head[0], self.head[1] - self.block_size), (self.head[0], self.head[1] - (2 * self.block_size))]
+        elif self.direction == Direction.DOWN:
+            self.snake = [self.head, (self.head[0], self.head[1] + self.block_size), (self.head[0], self.head[1] + (2 * self.block_size))]
+        elif self.direction == Direction.LEFT:
+            self.snake = [self.head, (self.head[0] - self.block_size, self.head[1]), (self.head[0] - (2 * self.block_size), self.head[1])]
+        elif self.direction == Direction.RIGHT:
+            self.snake = [self.head, (self.head[0] + self.block_size, self.head[1]), (self.head[0] + (2 * self.block_size), self.head[1])]
+
         self.score = 0
         self.green_apples = []
-        self.red_apple = None
+        self.red_apple = []
         self.place_food()
         self.update()
 
@@ -49,8 +60,8 @@ class Game:
         for apple in self.green_apples:
             pygame.draw.circle(self.screen, "green", (apple[0] + self.block_size // 2, apple[1] + self.block_size // 2), self.block_size // 2)
         
-        if self.red_apple:
-            pygame.draw.circle(self.screen, "red", (self.red_apple[0] + self.block_size // 2, self.red_apple[1] + self.block_size // 2), self.block_size // 2)
+        for apple in self.red_apple:
+            pygame.draw.circle(self.screen, "red", (apple[0] + self.block_size // 2, apple[1] + self.block_size // 2), self.block_size // 2)
 
         pygame.display.flip()
 
@@ -60,6 +71,8 @@ class Game:
             if event.type == pygame.QUIT:
                 pygame.quit()
                 quit()
+
+        self.move_history.append({"head": self.head, "move": self.direction})
 
         clock_wise = [Direction.RIGHT, Direction.DOWN, Direction.LEFT, Direction.UP]
         idx = clock_wise.index(self.direction)
@@ -77,19 +90,15 @@ class Game:
 
         reward = REWARDS["EMPTY"]
         game_over = False
-        if self.is_collision(self.head) or len(self.snake) <= 0:
-            game_over = True
-            reward = REWARDS["DEATH"]
-            return reward, game_over, self.score
         
         if self.head in self.green_apples:
             self.score += 1
             reward = REWARDS["GREEN"]
             self.green_apples.remove(self.head)
             self.place_food()
-        elif self.head == self.red_apple:
+        elif self.head in self.red_apple:
             reward = REWARDS["RED"]
-            self.red_apple = None
+            self.red_apple.remove(self.head)
             if len(self.snake) > 1:
                 self.snake.pop()
             if len(self.snake) > 1:
@@ -97,6 +106,11 @@ class Game:
             self.place_food()
         else:
             self.snake.pop()  # remove tail (the last element of the list)
+
+        if self.is_collision(self.head) or len(self.snake) <= 0:
+            game_over = True
+            reward = REWARDS["DEATH"]
+            return reward, game_over, self.score
 
         self.update()
         self.clock.tick(60)  # limits FPS to 60
@@ -111,11 +125,11 @@ class Game:
             y = random.randint(0, (self.h // self.block_size - 1)) * self.block_size
             if (x, y) not in self.snake and (x, y) != self.red_apple:
                 self.green_apples.append((x, y))
-        while self.red_apple is None:
+        while len(self.red_apple) < 1:
             x = random.randint(0, (self.w // self.block_size - 1)) * self.block_size
             y = random.randint(0, (self.h // self.block_size - 1)) * self.block_size
             if (x, y) not in self.snake and (x, y) not in self.green_apples:
-                self.red_apple = (x, y)
+                self.red_apple.append((x, y))
 
 
     def is_collision(self, position):
@@ -191,91 +205,102 @@ class Game:
 
     #     return state
 
-    def get_state(self):
+
+    def _is_there_point(self, from_point, to_points, direction):
+        """ Given a starting point, a list of points and a direction,
+            return True if there is a point directly in the given direction
+            from the starting point
         """
-        Estado mejorado: peligro relativo + comida relativa
-        11 features en total
-        """
-        head = self.head
-        
-        # Calcular puntos en direcciones relativas (recto, derecha, izquierda)
-        clock_wise = [Direction.RIGHT, Direction.DOWN, Direction.LEFT, Direction.UP]
-        idx = clock_wise.index(self.direction)
-        
-        # Direcciones relativas a donde mira la serpiente
-        dir_straight = clock_wise[idx]
-        dir_right = clock_wise[(idx + 1) % 4]
-        dir_left = clock_wise[(idx - 1) % 4]
-        
-        # Puntos a verificar
-        point_straight = self._get_point_in_direction(head, dir_straight)
-        point_right = self._get_point_in_direction(head, dir_right)
-        point_left = self._get_point_in_direction(head, dir_left)
-        
-        # PELIGRO en direcciones relativas (3 features)
-        danger_straight = self.is_collision(point_straight)
-        danger_right = self.is_collision(point_right)
-        danger_left = self.is_collision(point_left)
-        
-        # COMIDA VERDE: dirección relativa (4 features)
-        green_left, green_right, green_up, green_down = self._get_food_direction(
-            self.green_apples
-        )
-        
-        # COMIDA ROJA: dirección relativa (4 features)
-        red_left, red_right, red_up, red_down = self._get_food_direction(
-            [self.red_apple] if self.red_apple else []
-        )
-        
-        state = [
-            # Peligro relativo (3)
-            danger_straight,
-            danger_right,
-            danger_left,
-            
-            # Dirección de comida verde (4)
-            green_left,
-            green_right,
-            green_up,
-            green_down,
-            
-            # Dirección de comida roja (4)
-            red_left,
-            red_right,
-            red_up,
-            red_down,
-        ]
-        
-        return [int(x) for x in state]
-    
-    def _get_point_in_direction(self, point, direction):
-        """Obtiene el punto en una dirección específica"""
-        x, y = point
-        if direction == Direction.UP:
-            y -= self.block_size
-        elif direction == Direction.DOWN:
-            y += self.block_size
+        if direction == Direction.RIGHT:
+            return any([from_point[0] < to_point[0]
+                        and from_point[1] == to_point[1]
+                        for to_point in to_points])
         elif direction == Direction.LEFT:
-            x -= self.block_size
-        elif direction == Direction.RIGHT:
-            x += self.block_size
-        return (x, y)
-    
-    def _get_food_direction(self, food_list):
+            return any([from_point[0] > to_point[0]
+                        and from_point[1] == to_point[1]
+                        for to_point in to_points])
+        elif direction == Direction.UP:
+            return any([from_point[1] > to_point[1]
+                        and from_point[0] == to_point[0]
+                        for to_point in to_points])
+        elif direction == Direction.DOWN:
+            return any([from_point[1] < to_point[1]
+                        and from_point[0] == to_point[0]
+                        for to_point in to_points])
+
+        return False
+
+    def _move_index(self):
+        """ Return how much the snake is currently moving
         """
-        Retorna dirección de la comida más cercana
-        Returns: [izquierda, derecha, arriba, abajo]
+        if len(self.move_history) < 2:
+            return 1
+
+        coordinates = [move['head'] for move in self.move_history[-10:]]
+        x = np.array([point[0] for point in coordinates])
+        y = np.array([point[1] for point in coordinates])
+        std_dev = np.mean([
+            np.std(x),
+            np.std(y)
+        ]) / self.block_size
+
+        return std_dev
+
+
+    def get_state(self):
+        """ Return the current state of the game
         """
-        if not food_list:
-            return [0, 0, 0, 0]
-        
-        # Encontrar comida más cercana (distancia Manhattan)
-        closest = min(food_list, 
-                     key=lambda f: abs(f[0] - self.head[0]) + abs(f[1] - self.head[1]))
-        
-        food_left = int(closest[0] < self.head[0])
-        food_right = int(closest[0] > self.head[0])
-        food_up = int(closest[1] < self.head[1])
-        food_down = int(closest[1] > self.head[1])
-        
-        return [food_left, food_right, food_up, food_down]
+        head = self.snake[0] if len(self.snake) > 0 else self.head
+        direct_left = (head[0] - self.block_size, head[1])
+        direct_right = (head[0] + self.block_size, head[1])
+        direct_up = (head[0], head[1] - self.block_size)
+        direct_down = (head[0], head[1] + self.block_size)
+
+        dir_l = self.direction == Direction.LEFT
+        dir_r = self.direction == Direction.RIGHT
+        dir_u = self.direction == Direction.UP
+        dir_d = self.direction == Direction.DOWN
+
+        clock = [Direction.RIGHT, Direction.DOWN, Direction.LEFT, Direction.UP]
+
+        current = clock.index(self.direction)
+        straight = clock[current]
+        left = clock[(current - 1) % 4]
+        right = clock[(current + 1) % 4]
+
+        previous = self.move_history[-2]['move'] if len(
+            self.move_history) > 1 else self.direction
+        previous = clock.index(previous)
+        last_move_straight = previous == current
+        last_move_left = previous == (current - 1) % 4
+        last_move_right = previous == (current + 1) % 4
+
+        danger_straight = (dir_r and self.is_collision(direct_right)) or (dir_l and self.is_collision(direct_left)) or (dir_u and self.is_collision(direct_up)) or (dir_d and self.is_collision(direct_down))
+        danger_left = (dir_d and self.is_collision(direct_right)) or (dir_u and self.is_collision(direct_left)) or (dir_r and self.is_collision(direct_up)) or (dir_l and self.is_collision(direct_down))
+        danger_right = (dir_u and self.is_collision(direct_right)) or (dir_d and self.is_collision(direct_left)) or (dir_l and self.is_collision(direct_up)) or (dir_r and self.is_collision(direct_down))
+
+        green_apple_straight = self._is_there_point(head, self.green_apples, straight)
+        green_apple_left = self._is_there_point(head, self.green_apples, left)
+        green_apple_right = self._is_there_point(head, self.green_apples, right)
+        red_apple_straight = self._is_there_point(head, self.red_apple, straight)
+        red_apple_left = self._is_there_point(head, self.red_apple, left)
+        red_apple_right = self._is_there_point(head, self.red_apple, right)
+
+
+        state = [
+            self._move_index(),
+            last_move_straight,
+            last_move_left,
+            last_move_right,
+            danger_straight,
+            danger_left,
+            danger_right,
+            green_apple_straight,
+            green_apple_left,
+            green_apple_right,
+            red_apple_straight,
+            red_apple_left,
+            red_apple_right
+        ]
+
+        return state

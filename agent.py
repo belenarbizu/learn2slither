@@ -8,13 +8,13 @@ import torch.nn as nn
 
 class Agent:
     def __init__(self, batch_size, lr):
-        self.epsilon = 1.0  # randomness
+        self.epsilon = 0.4  # randomness
         self.gamma = 0.95  # discount rate
         self.memory = deque(maxlen=100_000)
         self.batch_size = batch_size
-        self.model = Model(11, 3)  # neural network model, 12 are the states lines
+        self.model = Model(13, 3)  # neural network model, 12 are the states lines
 
-        self.target = Model(11, 3)
+        self.target = Model(13, 3)
         self.target.load_state_dict(self.model.state_dict())
         self.target.eval()
 
@@ -45,14 +45,14 @@ class Agent:
     def get_action(self, state):
         action = [0, 0, 0] #no down
 
-        if random.random() < self.epsilon:
+        if random.uniform(0, 1) < self.epsilon:
             move = random.randint(0, 2)
             action[move] = 1
         else:
             # convert state list to state tensor so PyTorch model can process it
-            state_tensor = torch.tensor(state, dtype=torch.float)
+            state_tensor = torch.tensor(state, dtype=torch.float32)
             prediction = self.model(state_tensor)
-            move = torch.argmax(prediction).item()
+            move = prediction.argmax().item()
             action[move] = 1
 
         return action
