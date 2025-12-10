@@ -206,101 +206,107 @@ class Game:
     #     return state
 
 
-    def _is_there_point(self, from_point, to_points, direction):
-        """ Given a starting point, a list of points and a direction,
-            return True if there is a point directly in the given direction
-            from the starting point
+    def _normalize_distance(self, distance):
+        return 1.0 / distance
+
+
+    def _scan_direction(self, head, dx, dy):
         """
-        if direction == Direction.RIGHT:
-            return any([from_point[0] < to_point[0]
-                        and from_point[1] == to_point[1]
-                        for to_point in to_points])
-        elif direction == Direction.LEFT:
-            return any([from_point[0] > to_point[0]
-                        and from_point[1] == to_point[1]
-                        for to_point in to_points])
-        elif direction == Direction.UP:
-            return any([from_point[1] > to_point[1]
-                        and from_point[0] == to_point[0]
-                        for to_point in to_points])
-        elif direction == Direction.DOWN:
-            return any([from_point[1] < to_point[1]
-                        and from_point[0] == to_point[0]
-                        for to_point in to_points])
-
-        return False
-
-    def _move_index(self):
-        """ Return how much the snake is currently moving
+        Mira desde la cabeza en línea recta y devuelve:
+        [snake_body, green_apple, red_apple, wall, normalized_distance]
         """
-        if len(self.move_history) < 2:
-            return 1
 
-        coordinates = [move['head'] for move in self.move_history[-10:]]
-        x = np.array([point[0] for point in coordinates])
-        y = np.array([point[1] for point in coordinates])
-        std_dev = np.mean([
-            np.std(x),
-            np.std(y)
-        ]) / self.block_size
+        x, y = head
+        distance = 1
+        object_found = None   # "snake", "green", "red", "wall"
 
-        return std_dev
+        # avanzar una casilla en la dirección dada
+        x += dx
+        y += dy
+
+        while True:
+            # 1. Si salimos del tablero → pared
+            if x < 0 or x >= self.w or y < 0 or y >= self.h:
+                object_found = "wall"
+                break
+
+            pos = (x, y)
+
+            # 2. ¿Es cuerpo del snake?
+            if pos in self.snake[1:]:  # cuerpo, excluye la cabeza
+                object_found = "snake"
+                break
+
+            # 3. ¿Es manzana verde?
+            if pos in self.green_apples:
+                object_found = "green"
+                break
+
+            # 4. ¿Es manzana roja?
+            if pos in self.red_apple:
+                object_found = "red"
+                break
+
+            # avanzar otra casilla
+            x += dx
+            y += dy
+            distance += 1
+
+        # codificamos el resultado como vector de 5 posiciones:
+        # [snake_body, green, red, wall, distance_norm]
+        result = [0, 0, 0, 0, 0]
+
+        if object_found == "snake":
+            result[0] = 1
+        elif object_found == "green":
+            result[1] = 1
+        elif object_found == "red":
+            result[2] = 1
+        elif object_found == "wall":
+            result[3] = 1
+
+        # normalizamos la distancia → más cerca = mayor valor
+        result[4] = self._normalize_distance(distance)
+
+        return result
 
 
     def get_state(self):
-        """ Return the current state of the game
         """
-        head = self.snake[0] if len(self.snake) > 0 else self.head
-        direct_left = (head[0] - self.block_size, head[1])
-        direct_right = (head[0] + self.block_size, head[1])
-        direct_up = (head[0], head[1] - self.block_size)
-        direct_down = (head[0], head[1] + self.block_size)
+        Devuelve un vector de 24 valores:
+        4 = dirección actual one-hot
+        4×5 = visión left/right/up/down
+        """
 
-        dir_l = self.direction == Direction.LEFT
-        dir_r = self.direction == Direction.RIGHT
-        dir_u = self.direction == Direction.UP
-        dir_d = self.direction == Direction.DOWN
+        head = self.head
 
-        clock = [Direction.RIGHT, Direction.DOWN, Direction.LEFT, Direction.UP]
+        # --- 1. Dirección actual ---
+        dir_left  = 1 if self.direction == Direction.LEFT  else 0
+        dir_right = 1 if self.direction == Direction.RIGHT else 0
+        dir_up    = 1 if self.direction == Direction.UP    else 0
+        dir_down  = 1 if self.direction == Direction.DOWN  else 0
 
-        current = clock.index(self.direction)
-        straight = clock[current]
-        left = clock[(current - 1) % 4]
-        right = clock[(current + 1) % 4]
+        direction_state = [dir_left, dir_right, dir_up, dir_down]
 
-        previous = self.move_history[-2]['move'] if len(
-            self.move_history) > 1 else self.direction
-        previous = clock.index(previous)
-        last_move_straight = previous == current
-        last_move_left = previous == (current - 1) % 4
-        last_move_right = previous == (current + 1) % 4
+        # --- 2. Visión en 4 direcciones ---
+        # OJO: tu juego usa bloques con tamaño block_size
+        # pero para visión NO queremos saltar bloques,
+        # queremos mover en píxeles usando block_size.
 
-        danger_straight = (dir_r and self.is_collision(direct_right)) or (dir_l and self.is_collision(direct_left)) or (dir_u and self.is_collision(direct_up)) or (dir_d and self.is_collision(direct_down))
-        danger_left = (dir_d and self.is_collision(direct_right)) or (dir_u and self.is_collision(direct_left)) or (dir_r and self.is_collision(direct_up)) or (dir_l and self.is_collision(direct_down))
-        danger_right = (dir_u and self.is_collision(direct_right)) or (dir_d and self.is_collision(direct_left)) or (dir_l and self.is_collision(direct_up)) or (dir_r and self.is_collision(direct_down))
+        bs = self.block_size
 
-        green_apple_straight = self._is_there_point(head, self.green_apples, straight)
-        green_apple_left = self._is_there_point(head, self.green_apples, left)
-        green_apple_right = self._is_there_point(head, self.green_apples, right)
-        red_apple_straight = self._is_there_point(head, self.red_apple, straight)
-        red_apple_left = self._is_there_point(head, self.red_apple, left)
-        red_apple_right = self._is_there_point(head, self.red_apple, right)
+        look_left  = self._scan_direction(head, -bs, 0)
+        look_right = self._scan_direction(head,  bs, 0)
+        look_up    = self._scan_direction(head, 0, -bs)
+        look_down  = self._scan_direction(head, 0,  bs)
 
-
-        state = [
-            self._move_index(),
-            last_move_straight,
-            last_move_left,
-            last_move_right,
-            danger_straight,
-            danger_left,
-            danger_right,
-            green_apple_straight,
-            green_apple_left,
-            green_apple_right,
-            red_apple_straight,
-            red_apple_left,
-            red_apple_right
-        ]
+        # Concatenar todo en un mismo vector
+        state = (
+            direction_state +
+            look_left +
+            look_right +
+            look_up +
+            look_down
+        )
 
         return state

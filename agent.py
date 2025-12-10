@@ -8,13 +8,13 @@ import torch.nn as nn
 
 class Agent:
     def __init__(self, batch_size, lr):
-        self.epsilon = 0.4  # randomness
-        self.gamma = 0.95  # discount rate
+        self.epsilon = 1.0  # randomness
+        self.gamma = 0.99  # discount rate
         self.memory = deque(maxlen=100_000)
         self.batch_size = batch_size
-        self.model = Model(13, 3)  # neural network model, 12 are the states lines
+        self.model = Model(24, 3)  # neural network model, 12 are the states lines
 
-        self.target = Model(13, 3)
+        self.target = Model(24, 3)
         self.target.load_state_dict(self.model.state_dict())
         self.target.eval()
 

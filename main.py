@@ -3,7 +3,7 @@ from game import Game
 import pygame
 
 def main():
-    agent = Agent(batch_size=64, lr=0.005)
+    agent = Agent(batch_size=64, lr=0.002)
     game = Game()
     n_games = 0
 
