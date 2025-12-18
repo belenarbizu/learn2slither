@@ -17,7 +17,7 @@ class Direction(Enum):
 BOARD_SIZE = 10
 
 class Game:
-    def __init__(self, block_size=40):
+    def __init__(self, block_size=80):
         self.w = BOARD_SIZE * block_size
         self.h = BOARD_SIZE * block_size
         self.block_size = block_size
@@ -30,7 +30,6 @@ class Game:
 
     
     def reset(self):
-        self.move_history = []
         self.direction = random.choice(list(Direction))
         self.head = (random.randint(0, (self.w // self.block_size - 1)) * self.block_size, random.randint(0, (self.h // self.block_size - 1)) * self.block_size)
         
@@ -71,8 +70,6 @@ class Game:
             if event.type == pygame.QUIT:
                 pygame.quit()
                 quit()
-
-        self.move_history.append({"head": self.head, "move": self.direction})
 
         clock_wise = [Direction.RIGHT, Direction.DOWN, Direction.LEFT, Direction.UP]
         idx = clock_wise.index(self.direction)

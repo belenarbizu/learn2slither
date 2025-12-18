@@ -49,10 +49,11 @@ class Agent:
             action[move] = 1
         else:
             # convert state list to state tensor so PyTorch model can process it
-            state_tensor = torch.tensor(state, dtype=torch.float32)
-            prediction = self.model(state_tensor)
-            move = prediction.argmax().item()
-            action[move] = 1
+            with torch.no_grad():
+                state_tensor = torch.tensor(state, dtype=torch.float32)
+                prediction = self.model(state_tensor)
+                move = prediction.argmax().item()
+                action[move] = 1
 
         return action
 
