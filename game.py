@@ -157,156 +157,49 @@ class Game:
         self.head = (x, y)
     
 
-    # def get_state(self):
-    #     left = (self.head[0] - self.block_size, self.head[1])
-    #     right = (self.head[0] + self.block_size, self.head[1])
-    #     up = (self.head[0], self.head[1] - self.block_size)
-    #     down = (self.head[0], self.head[1] + self.block_size)
-
-    #     dir_left = 1 if self.direction == Direction.LEFT else 0
-    #     dir_right = 1 if self.direction == Direction.RIGHT else 0
-    #     dir_up = 1 if self.direction == Direction.UP else 0
-    #     dir_down = 1 if self.direction == Direction.DOWN else 0
-
-    #     # clock_wise = [Direction.RIGHT, Direction.DOWN, Direction.LEFT, Direction.UP]
-    #     # idx = clock_wise.index(self.direction)
-    #     # next_dir = clock_wise[(idx + 1) % 4]
-    #     # prev_dir = clock_wise[(idx - 1) % 4]
-
-    #     danger_left = dir_left and self.is_collision(left)
-    #     danger_right = dir_right and self.is_collision(right)
-    #     danger_up = dir_up and self.is_collision(up)
-    #     danger_down = dir_down and self.is_collision(down)
-
-    #     red_apple_left = 1 if (self.red_apple[0] < self.head[0] and self.red_apple[1] == self.head[1]) else 0
-    #     red_apple_right = 1 if (self.red_apple[0] > self.head[0] and self.red_apple[1] == self.head[1]) else 0
-    #     red_apple_up = 1 if (self.red_apple[1] < self.head[1] and self.red_apple[0] == self.head[0]) else 0
-
-    #     green_apple_left = 1 if any(apple[0] < self.head[0] and apple[1] == self.head[1] for apple in self.green_apples) else 0
-    #     green_apple_right = 1 if any(apple[0] > self.head[0] and apple[1] == self.head[1] for apple in self.green_apples) else 0
-    #     green_apple_up = 1 if any(apple[1] < self.head[1] and apple[0] == self.head[0] for apple in self.green_apples) else 0
-
-    #     state = [
-    #         dir_left,
-    #         dir_right,
-    #         dir_up,
-    #         dir_down,
-    #         danger_left,
-    #         danger_right,
-    #         danger_up,
-    #         danger_down,
-    #         red_apple_left,
-    #         red_apple_right,
-    #         red_apple_up,
-    #         green_apple_left,
-    #         green_apple_right,
-    #         green_apple_up
-    #     ]
-
-    #     return state
-
-
-    def _normalize_distance(self, distance):
-        return 1.0 / distance
-
-
-    def _scan_direction(self, head, dx, dy):
-        """
-        Mira desde la cabeza en línea recta y devuelve:
-        [snake_body, green_apple, red_apple, wall, normalized_distance]
-        """
-
-        x, y = head
-        distance = 1
-        object_found = None   # "snake", "green", "red", "wall"
-
-        # avanzar una casilla en la dirección dada
-        x += dx
-        y += dy
-
-        while True:
-            # 1. Si salimos del tablero → pared
-            if x < 0 or x >= self.w or y < 0 or y >= self.h:
-                object_found = "wall"
-                break
-
-            pos = (x, y)
-
-            # 2. ¿Es cuerpo del snake?
-            if pos in self.snake[1:]:  # cuerpo, excluye la cabeza
-                object_found = "snake"
-                break
-
-            # 3. ¿Es manzana verde?
-            if pos in self.green_apples:
-                object_found = "green"
-                break
-
-            # 4. ¿Es manzana roja?
-            if pos in self.red_apple:
-                object_found = "red"
-                break
-
-            # avanzar otra casilla
-            x += dx
-            y += dy
-            distance += 1
-
-        # codificamos el resultado como vector de 5 posiciones:
-        # [snake_body, green, red, wall, distance_norm]
-        result = [0, 0, 0, 0, 0]
-
-        if object_found == "snake":
-            result[0] = 1
-        elif object_found == "green":
-            result[1] = 1
-        elif object_found == "red":
-            result[2] = 1
-        elif object_found == "wall":
-            result[3] = 1
-
-        # normalizamos la distancia → más cerca = mayor valor
-        result[4] = self._normalize_distance(distance)
-
-        return result
+    def get_position_in_direction(self, direction):
+        x = self.head[0]
+        y = self.head[1]
+        if direction == Direction.UP:
+            y -= self.block_size
+        elif direction == Direction.DOWN:
+            y += self.block_size
+        elif direction == Direction.LEFT:
+            x -= self.block_size
+        elif direction == Direction.RIGHT:
+            x += self.block_size
+        return (x, y)
 
 
     def get_state(self):
-        """
-        Devuelve un vector de 24 valores:
-        4 = dirección actual one-hot
-        4×5 = visión left/right/up/down
-        """
+        clock_wise = [Direction.RIGHT, Direction.DOWN, Direction.LEFT, Direction.UP]
+        idx = clock_wise.index(self.direction)
+        straight = clock_wise[idx]
+        right = clock_wise[(idx + 1) % 4]
+        left = clock_wise[(idx - 1) % 4]
 
-        head = self.head
+        danger_left = 1 if self.is_collision(self.get_position_in_direction(left)) else 0
+        danger_right = 1 if self.is_collision(self.get_position_in_direction(right)) else 0
+        danger_up = 1 if self.is_collision(self.get_position_in_direction(straight)) else 0
 
-        # --- 1. Dirección actual ---
-        dir_left  = 1 if self.direction == Direction.LEFT  else 0
-        dir_right = 1 if self.direction == Direction.RIGHT else 0
-        dir_up    = 1 if self.direction == Direction.UP    else 0
-        dir_down  = 1 if self.direction == Direction.DOWN  else 0
+        red_apple_left = 1 if self.get_position_in_direction(left) in self.red_apple else 0
+        red_apple_right = 1 if self.get_position_in_direction(right) in self.red_apple else 0
+        red_apple_up = 1 if self.get_position_in_direction(straight) in self.red_apple else 0
 
-        direction_state = [dir_left, dir_right, dir_up, dir_down]
+        green_apple_left = 1 if self.get_position_in_direction(left) in self.green_apples else 0
+        green_apple_right = 1 if self.get_position_in_direction(right) in self.green_apples else 0
+        green_apple_up = 1 if self.get_position_in_direction(straight) in self.green_apples else 0
 
-        # --- 2. Visión en 4 direcciones ---
-        # OJO: tu juego usa bloques con tamaño block_size
-        # pero para visión NO queremos saltar bloques,
-        # queremos mover en píxeles usando block_size.
-
-        bs = self.block_size
-
-        look_left  = self._scan_direction(head, -bs, 0)
-        look_right = self._scan_direction(head,  bs, 0)
-        look_up    = self._scan_direction(head, 0, -bs)
-        look_down  = self._scan_direction(head, 0,  bs)
-
-        # Concatenar todo en un mismo vector
-        state = (
-            direction_state +
-            look_left +
-            look_right +
-            look_up +
-            look_down
-        )
+        state = [
+            danger_left,
+            danger_right,
+            danger_up,
+            red_apple_left,
+            red_apple_right,
+            red_apple_up,
+            green_apple_left,
+            green_apple_right,
+            green_apple_up
+        ]
 
         return state

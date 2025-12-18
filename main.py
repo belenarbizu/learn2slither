@@ -1,9 +1,8 @@
 from agent import Agent
 from game import Game
-import pygame
 
 def main():
-    agent = Agent(batch_size=64, lr=0.002)
+    agent = Agent(batch_size=64, lr=0.001)
     game = Game()
     n_games = 0
 
