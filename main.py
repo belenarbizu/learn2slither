@@ -32,8 +32,8 @@ def main():
             print('Game', n_games, 'Score:', score)
             # train long memory
             agent.train_long_memory()
-            agent.epsilon *= 0.995
-            agent.epsilon = max(0.01, agent.epsilon)
+            agent.epsilon *= 0.9995
+            agent.epsilon = max(0.05, agent.epsilon)
 
 if __name__ == '__main__':
     main()
