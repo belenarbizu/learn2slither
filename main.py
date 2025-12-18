@@ -3,7 +3,7 @@ from game import Game
 import pygame
 
 def main():
-    agent = Agent(batch_size=100, lr=0.001)
+    agent = Agent(batch_size=64, lr=0.002)
     game = Game()
     n_games = 0
 
@@ -29,7 +29,8 @@ def main():
         if done:
             game.reset()
             n_games += 1
-            print('Game', n_games, 'Score:', score)
+            if score > 0:
+                print('Game', n_games, 'Score:', score)
             # train long memory
             agent.train_long_memory()
             agent.epsilon *= 0.9995
