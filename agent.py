@@ -1,6 +1,5 @@
 import torch
 import random
-import numpy as np
 from collections import deque #for memory
 from model import Model
 import torch.optim as optim

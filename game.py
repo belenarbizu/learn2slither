@@ -1,7 +1,6 @@
 import random
 import pygame
 from zmq import Enum
-import numpy as np
 
 REWARDS = {"GREEN": 25,
           "RED": -25,
@@ -17,7 +16,7 @@ class Direction(Enum):
 BOARD_SIZE = 10
 
 class Game:
-    def __init__(self, block_size=80):
+    def __init__(self, block_size=40):
         self.w = BOARD_SIZE * block_size
         self.h = BOARD_SIZE * block_size
         self.block_size = block_size
@@ -166,6 +165,18 @@ class Game:
         elif direction == Direction.RIGHT:
             x += self.block_size
         return (x, y)
+    
+
+    def is_apple_in_direction(self, direction, apples):
+        x, y = self.head
+        if direction == Direction.UP:
+           return any(ax == x and ay < y for (ax, ay) in apples)
+        elif direction == Direction.DOWN:
+            return any(ax == x and ay > y for (ax, ay) in apples)
+        elif direction == Direction.LEFT:
+            return any(ax < x and ay == y for (ax, ay) in apples)
+        elif direction == Direction.RIGHT:
+            return any(ax > x and ay == y for (ax, ay) in apples)
 
 
     def get_state(self):
@@ -179,13 +190,13 @@ class Game:
         danger_right = 1 if self.is_collision(self.get_position_in_direction(right)) else 0
         danger_straight = 1 if self.is_collision(self.get_position_in_direction(straight)) else 0
 
-        red_apple_left = 1 if self.get_position_in_direction(left) in self.red_apple else 0
-        red_apple_right = 1 if self.get_position_in_direction(right) in self.red_apple else 0
-        red_apple_straight = 1 if self.get_position_in_direction(straight) in self.red_apple else 0
+        red_apple_left = self.is_apple_in_direction(left, self.red_apple)
+        red_apple_right = self.is_apple_in_direction(right, self.red_apple)
+        red_apple_straight = self.is_apple_in_direction(straight, self.red_apple)
 
-        green_apple_left = 1 if self.get_position_in_direction(left) in self.green_apples else 0
-        green_apple_right = 1 if self.get_position_in_direction(right) in self.green_apples else 0
-        green_apple_straight = 1 if self.get_position_in_direction(straight) in self.green_apples else 0
+        green_apple_left = self.is_apple_in_direction(left, self.green_apples)
+        green_apple_right = self.is_apple_in_direction(right, self.green_apples)
+        green_apple_straight = self.is_apple_in_direction(straight, self.green_apples)
 
         state = [
             danger_left,

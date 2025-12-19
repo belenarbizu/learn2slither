@@ -2,7 +2,7 @@ from agent import Agent
 from game import Game
 
 def main():
-    agent = Agent(batch_size=256, lr=0.002)
+    agent = Agent(batch_size=64, lr=0.001)
     game = Game()
     n_games = 0
 
@@ -33,7 +33,7 @@ def main():
             # train long memory
             agent.train_long_memory()
             agent.epsilon *= 0.9995
-            agent.epsilon = max(0.01, agent.epsilon)
+            agent.epsilon = max(0.05, agent.epsilon)
 
 if __name__ == '__main__':
     main()
