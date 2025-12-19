@@ -177,26 +177,26 @@ class Game:
 
         danger_left = 1 if self.is_collision(self.get_position_in_direction(left)) else 0
         danger_right = 1 if self.is_collision(self.get_position_in_direction(right)) else 0
-        danger_up = 1 if self.is_collision(self.get_position_in_direction(straight)) else 0
+        danger_straight = 1 if self.is_collision(self.get_position_in_direction(straight)) else 0
 
         red_apple_left = 1 if self.get_position_in_direction(left) in self.red_apple else 0
         red_apple_right = 1 if self.get_position_in_direction(right) in self.red_apple else 0
-        red_apple_up = 1 if self.get_position_in_direction(straight) in self.red_apple else 0
+        red_apple_straight = 1 if self.get_position_in_direction(straight) in self.red_apple else 0
 
         green_apple_left = 1 if self.get_position_in_direction(left) in self.green_apples else 0
         green_apple_right = 1 if self.get_position_in_direction(right) in self.green_apples else 0
-        green_apple_up = 1 if self.get_position_in_direction(straight) in self.green_apples else 0
+        green_apple_straight = 1 if self.get_position_in_direction(straight) in self.green_apples else 0
 
         state = [
             danger_left,
             danger_right,
-            danger_up,
+            danger_straight,
             red_apple_left,
             red_apple_right,
-            red_apple_up,
+            red_apple_straight,
             green_apple_left,
             green_apple_right,
-            green_apple_up
+            green_apple_straight
         ]
 
         return state
