@@ -4,8 +4,8 @@ from zmq import Enum
 
 REWARDS = {"GREEN": 25,
           "RED": -25,
-          "DEATH": -100,
-          "EMPTY": -0.01}
+          "DEATH": -50,
+          "EMPTY": -0.1}
 
 class Direction(Enum):
     UP = 0
@@ -79,6 +79,7 @@ class Game:
             new_dir = clock_wise[(idx + 1) % 4]
         else:  # left turn r -> u -> l -> d
             new_dir = clock_wise[(idx - 1) % 4]
+        # print("DIR:", self.direction, "| ACTION:", action, "| NEW DIR:", new_dir)
         self.direction = new_dir
 
         self.move(self.direction)  # update the head
@@ -109,7 +110,7 @@ class Game:
             return reward, game_over, self.score
 
         self.update()
-        self.clock.tick(60)  # limits FPS to 60
+        self.clock.tick(30)  # limits FPS to 60
 
         return reward, game_over, self.score
 
@@ -197,6 +198,15 @@ class Game:
         green_apple_left = self.is_apple_in_direction(left, self.green_apples)
         green_apple_right = self.is_apple_in_direction(right, self.green_apples)
         green_apple_straight = self.is_apple_in_direction(straight, self.green_apples)
+
+        # print("STATE:")
+        # print(" danger L R S:", danger_left, danger_right, danger_straight)
+        # print(" red    L R S:", red_apple_left, red_apple_right, red_apple_straight)
+        # print(" green  L R S:", green_apple_left, green_apple_right, green_apple_straight)
+        # print("HEAD:", self.head, "DIR:", self.direction)
+        # print("GREEN:", self.green_apples)
+        # print("RED:", self.red_apple)
+        # print("-" * 40)
 
         state = [
             danger_left,

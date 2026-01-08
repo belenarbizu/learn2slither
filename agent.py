@@ -51,6 +51,7 @@ class Agent:
             with torch.no_grad():
                 state_tensor = torch.tensor(state, dtype=torch.float32)
                 prediction = self.model(state_tensor)
+                print("Q:", prediction.tolist(), "-> action:", prediction.argmax().item())
                 move = prediction.argmax().item()
                 action[move] = 1
 
